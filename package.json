@@ -1,7 +1,7 @@
 {
   "name": "omega-tunnel",
   "version": "1.0.0",
-  "description": "Tunnel DIY pour serveur local",
+  "description": "tunnel",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
