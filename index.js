@@ -4,6 +4,10 @@ const http = require('http');
 
 const app = express();
 const server = http.createServer(app);
+
+// Augmente la limite de taille pour accepter les gros transferts (APK, photos)
+app.use(express.raw({ type: '*/*', limit: '100mb' }));
+
 const wss = new WebSocketServer({ server });
 
 let localClient = null;
@@ -11,7 +15,7 @@ let requestIdCounter = 0;
 const pendingRequests = new Map();
 
 wss.on('connection', (ws) => {
-    console.log('Serveur local connecté au tunnel multi-port !');
+    console.log('Serveur local connecté au tunnel !');
     localClient = ws;
 
     ws.on('message', (message) => {
@@ -35,9 +39,6 @@ app.use((req, res) => {
         return res.status(502).send('Tunnel fermé : le serveur local ne répond pas.');
     }
 
-    // Exemple de routage : 
-    // Si l'URL commence par /s1/, on cible le port 4000 et on retire /s1 du chemin
-    // Si l'URL commence par /s2/, on cible le port 3000 et on retire /s2 du chemin
     let targetPort = 4000;
     let cleanUrl = req.url;
 
@@ -54,15 +55,15 @@ app.use((req, res) => {
 
     localClient.send(JSON.stringify({
         id: reqId,
-        targetPort: targetPort, // On envoie le port cible au script local
+        targetPort: targetPort,
         method: req.method,
         url: cleanUrl,
         headers: req.headers,
-        body: req.body
+        body: req.body ? Buffer.from(req.body).toString('base64') : null
     }));
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Relais multi-port actif sur le port ${PORT}`);
+    console.log(`Relais tunnel actif sur le port ${PORT}`);
 });
